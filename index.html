@@ -581,22 +581,32 @@
 
         // Показ уведомлений
         function showToast(title, message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type === 'error' ? 'error' : ''}`;
-        toast.innerHTML = `
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        `;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+    toast.innerHTML = `
+        <div class="toast-title">${title}</div>
+        <div class="toast-message">${message}</div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Показываем toast через 100 мс (чтобы успел добавиться в DOM)
+    setTimeout(() => {
+        toast.classList.add('show');
         
-        document.body.appendChild(toast);
-        
-        setTimeout(() => toast.classList.add('show'), 100);
-        
+        // Убираем toast через 5 секунд (5000 мс)
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => document.body.removeChild(toast), 300);
-        }, 5000); // Изменено с 3000 на 5000 мс (5 секунд)
-    }
+            
+            // Удаляем toast из DOM после завершения анимации (300 мс)
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    document.body.removeChild(toast);
+                }
+            }, 300);
+        }, 5000); // Время показа (5 секунд)
+    }, 100);
+}
 
         // Запуск приложения
         init();
