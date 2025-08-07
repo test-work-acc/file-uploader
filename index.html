@@ -521,7 +521,7 @@
         }
 
         // Загрузка файла
-        async function handleUpload() {
+          async function handleUpload() {
             if (!selectedFile || !WEBHOOK_URL || isUploading) return;
             
             isUploading = true;
@@ -558,24 +558,35 @@
                         handleRemoveFile();
                         progressContainer.style.display = 'none';
                         updateProgress(0);
-                        uploadZone.style.display = 'block'; // Показываем зону загрузки снова
+                        uploadZone.style.display = 'block'; // Показываем зону загрузки после успешной отправки
                     }, 1000);
                 } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
                 }
             } catch (error) {
                 clearInterval(progressInterval);
                 updateProgress(0);
                 console.error('Ошибка загрузки файла:', error);
-                showToast('Ошибка загрузки', error.message || 'Попробуйте еще раз', 'error');
+                
+                // Разные сценарии для разных типов ошибок
+                if (error.message.includes('Failed to fetch')) {
+                    // Ошибка сети - файл остаётся, зона загрузки не показывается
+                    showToast('Ошибка сети', 'Не удалось подключиться к серверу. Файл сохранён, попробуйте отправить снова.', 'error');
+                } else if (error.message.includes('Ошибка сервера')) {
+                    // Ошибка сервера - файл остаётся, зона загрузки не показывается
+                    showToast('Ошибка сервера', 'Сервер вернул ошибку. Файл сохранён, попробуйте отправить снова.', 'error');
+                } else {
+                    // Другие ошибки - удаляем файл и показываем зону загрузки
+                    handleRemoveFile();
+                    showToast('Ошибка загрузки', 'Файл не был отправлен. Пожалуйста, загрузите его снова.', 'error');
+                }
+                
                 progressContainer.style.display = 'none';
-                uploadZone.style.display = 'block'; // Показываем зону загрузки при ошибке
             } finally {
                 isUploading = false;
                 uploadBtn.disabled = false;
             }
         }
-
         // Обновление прогресса
         function updateProgress(value) {
             progressFill.style.width = `${value}%`;
