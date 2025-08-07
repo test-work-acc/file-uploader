@@ -520,58 +520,57 @@
 
         // Загрузка файла
         async function handleUpload() {
-            if (!selectedFile || !WEBHOOK_URL || isUploading) return;
+    if (!selectedFile || !WEBHOOK_URL || isUploading) return;
+    
+    isUploading = true;
+    uploadBtn.disabled = true;
+    progressContainer.style.display = 'block';
+    progressFilename.textContent = selectedFile.name;
+    
+    // Симуляция прогресса с ограничением до 90%
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress = Math.min(progress + Math.random() * 10, 90); // Гарантированно не превысит 90%
+        updateProgress(progress);
+    }, 200);
+    
+    try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
+        if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
+        
+        const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            body: formData,
+        });
+        
+        clearInterval(progressInterval);
+        updateProgress(100); // Устанавливаем 100% после завершения
+        
+        if (response.ok) {
+            showToast('Файл успешно загружен', `${selectedFile.name} отправлен на обработку`);
             
-            isUploading = true;
-            uploadBtn.disabled = true;
-            progressContainer.style.display = 'block';
-            progressFilename.textContent = selectedFile.name;
-            
-            // Симуляция прогресса
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress > 90) progress = 90;
-                updateProgress(progress);
-            }, 200);
-            
-            try {
-                const formData = new FormData();
-                formData.append('file', selectedFile);
-                
-                if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
-                if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
-                
-                const response = await fetch(WEBHOOK_URL, {
-                    method: 'POST',
-                    body: formData,
-                });
-                
-                clearInterval(progressInterval);
-                updateProgress(100);
-                
-                if (response.ok) {
-                    showToast('Файл успешно загружен', `${selectedFile.name} отправлен на обработку`);
-                    
-                    setTimeout(() => {
-                        handleRemoveFile();
-                        progressContainer.style.display = 'none';
-                        updateProgress(0);
-                    }, 1000);
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            } catch (error) {
-                clearInterval(progressInterval);
-                updateProgress(0);
-                console.error('Ошибка загрузки файла:', error);
-                showToast('Ошибка загрузки', error.message || 'Попробуйте еще раз', 'error');
+            setTimeout(() => {
+                handleRemoveFile();
                 progressContainer.style.display = 'none';
-            } finally {
-                isUploading = false;
-                uploadBtn.disabled = false;
-            }
+                updateProgress(0);
+            }, 1000);
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+    } catch (error) {
+        clearInterval(progressInterval);
+        updateProgress(0);
+        console.error('Ошибка загрузки файла:', error);
+        showToast('Ошибка загрузки', error.message || 'Попробуйте еще раз', 'error');
+        progressContainer.style.display = 'none';
+    } finally {
+        isUploading = false;
+        uploadBtn.disabled = false;
+    }
+}
 
         // Обновление прогресса
         function updateProgress(value) {
