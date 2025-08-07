@@ -478,6 +478,7 @@
                 fileSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
                 fileInfo.style.display = 'block';
                 uploadBtn.classList.remove('hidden');
+                uploadZone.style.display = 'none'; // Скрываем зону загрузки
                 showToast('Файл загружен', `${file.name} готов к отправке`);
             }
         }
@@ -516,61 +517,64 @@
             fileInfo.style.display = 'none';
             uploadBtn.classList.add('hidden');
             fileInput.value = '';
+            uploadZone.style.display = 'block'; // Показываем зону загрузки снова
         }
 
         // Загрузка файла
         async function handleUpload() {
-    if (!selectedFile || !WEBHOOK_URL || isUploading) return;
-    
-    isUploading = true;
-    uploadBtn.disabled = true;
-    progressContainer.style.display = 'block';
-    progressFilename.textContent = selectedFile.name;
-    
-    // Симуляция прогресса с ограничением до 90%
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-        progress = Math.min(progress + Math.random() * 10, 90); // Гарантированно не превысит 90%
-        updateProgress(progress);
-    }, 200);
-    
-    try {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        
-        if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
-        if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
-        
-        const response = await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            body: formData,
-        });
-        
-        clearInterval(progressInterval);
-        updateProgress(100); // Устанавливаем 100% после завершения
-        
-        if (response.ok) {
-            showToast('Файл успешно загружен', `${selectedFile.name} отправлен на обработку`);
+            if (!selectedFile || !WEBHOOK_URL || isUploading) return;
             
-            setTimeout(() => {
-                handleRemoveFile();
-                progressContainer.style.display = 'none';
+            isUploading = true;
+            uploadBtn.disabled = true;
+            progressContainer.style.display = 'block';
+            progressFilename.textContent = selectedFile.name;
+            
+            // Симуляция прогресса с ограничением до 90%
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress = Math.min(progress + Math.random() * 10, 90);
+                updateProgress(progress);
+            }, 200);
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                
+                if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
+                if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                clearInterval(progressInterval);
+                updateProgress(100);
+                
+                if (response.ok) {
+                    showToast('Файл успешно загружен', `${selectedFile.name} отправлен на обработку`);
+                    
+                    setTimeout(() => {
+                        handleRemoveFile();
+                        progressContainer.style.display = 'none';
+                        updateProgress(0);
+                        uploadZone.style.display = 'block'; // Показываем зону загрузки снова
+                    }, 1000);
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                clearInterval(progressInterval);
                 updateProgress(0);
-            }, 1000);
-        } else {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                console.error('Ошибка загрузки файла:', error);
+                showToast('Ошибка загрузки', error.message || 'Попробуйте еще раз', 'error');
+                progressContainer.style.display = 'none';
+                uploadZone.style.display = 'block'; // Показываем зону загрузки при ошибке
+            } finally {
+                isUploading = false;
+                uploadBtn.disabled = false;
+            }
         }
-    } catch (error) {
-        clearInterval(progressInterval);
-        updateProgress(0);
-        console.error('Ошибка загрузки файла:', error);
-        showToast('Ошибка загрузки', error.message || 'Попробуйте еще раз', 'error');
-        progressContainer.style.display = 'none';
-    } finally {
-        isUploading = false;
-        uploadBtn.disabled = false;
-    }
-}
 
         // Обновление прогресса
         function updateProgress(value) {
@@ -580,32 +584,29 @@
 
         // Показ уведомлений
         function showToast(title, message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${type === 'error' ? 'error' : ''}`;
-    toast.innerHTML = `
-        <div class="toast-title">${title}</div>
-        <div class="toast-message">${message}</div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    // Показываем toast через 100 мс (чтобы успел добавиться в DOM)
-    setTimeout(() => {
-        toast.classList.add('show');
-        
-        // Убираем toast через 5 секунд (5000 мс)
-        setTimeout(() => {
-            toast.classList.remove('show');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            `;
             
-            // Удаляем toast из DOM после завершения анимации (300 мс)
+            document.body.appendChild(toast);
+            
             setTimeout(() => {
-                if (toast.parentNode) {
-                    document.body.removeChild(toast);
-                }
-            }, 300);
-        }, 5000); // Время показа (5 секунд)
-    }, 100);
-}
+                toast.classList.add('show');
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            document.body.removeChild(toast);
+                        }
+                    }, 300);
+                }, 5000);
+            }, 100);
+        }
 
         // Запуск приложения
         init();
