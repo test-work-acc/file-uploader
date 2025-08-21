@@ -405,7 +405,7 @@
 
         let selectedFile = null;
         let isUploading = false;
-        let urlParams = { chat_id: '', timestamp: '' };
+        let urlParams = { chat_id: '', timestamp: '', bot: '' };
 
         // DOM элементы
         const uploadZone = document.getElementById('uploadZone');
@@ -428,6 +428,7 @@
             const searchParams = new URLSearchParams(window.location.search);
             urlParams.chat_id = searchParams.get('chat_id') || '';
             urlParams.timestamp = searchParams.get('timestamp') || '';
+            urlParams.timestamp = searchParams.get('bot') || '';
 
             // Показываем информацию о пользователе, если есть параметры
             if (urlParams.chat_id || urlParams.timestamp) {
@@ -542,6 +543,7 @@
                 
                 if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
                 if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
+                if (urlParams.bot) formData.append('bot', urlParams.bot);
                 
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
