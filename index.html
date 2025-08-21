@@ -545,7 +545,7 @@
                 if (urlParams.chat_id) formData.append('chat_id', urlParams.chat_id);
                 if (urlParams.timestamp) formData.append('timestamp', urlParams.timestamp);
                 if (urlParams.bot) formData.append('bot', urlParams.bot);
-                if (urlParams.messageId) formData.append('bot', urlParams.messageId);
+                if (urlParams.messageId) formData.append('messageId', urlParams.messageId);
                 
                 const response = await fetch(WEBHOOK_URL, {
                     method: 'POST',
