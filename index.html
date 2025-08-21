@@ -428,7 +428,7 @@
             const searchParams = new URLSearchParams(window.location.search);
             urlParams.chat_id = searchParams.get('chat_id') || '';
             urlParams.timestamp = searchParams.get('timestamp') || '';
-            urlParams.timestamp = searchParams.get('bot') || '';
+            urlParams.bot = searchParams.get('bot') || '';
 
             // Показываем информацию о пользователе, если есть параметры
             if (urlParams.chat_id || urlParams.timestamp) {
